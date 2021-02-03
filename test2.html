@@ -1,0 +1,317 @@
+<html>
+
+	<script>
+		(function (_doc, _win) {
+			let prevSign = true, /* prev symbol is Math sign */
+				prevDot = false, /* prev symbol is Dot sign */
+				prevMin = false, /* prev symbol is Minus for number */
+				newCalc = false, /* flag for restarting calculating */
+				strToCalc = '', /* string with calculating */
+				symToDel; /* symbol to delete */
+			let calc = {};
+			calc.table = _doc.querySelector('#calcTable');
+
+			/* Check if math number is entered */
+			calc.validateNumber = function(str) {
+				// var numberExpr = /^\d+$/;
+				 var numberExpr = /^\d+$/;
+				return numberExpr.test(str);
+			};
+
+			/* Check if math sign is entered */
+			calc.validateMath = function(str) {
+				//var mathExpr = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+				var mathExpr = /[-+/*]/;
+				return mathExpr.test(str);
+			};
+
+			/* Restart calculating */
+			calc.resetCalc = function() {
+				prevSign = true;
+				prevDot = false;
+				prevMin = false;
+				newCalc = false;
+				strToCalc = '';
+			};
+
+			/* Validating what key was entered and manipulating with symbols */
+			calc.checkKey = function(letter) {
+				/* Entered symbol is C for restart */
+				if (letter == 'C') {
+					calc.resetCalc();
+					calc.table.value = strToCalc;
+					return;
+				}
+
+				/* Entered symbol is number */
+				if (calc.validateNumber(letter)) {
+					if (newCalc) {
+						calc.resetCalc();
+						newCalc = false;
+					}
+					strToCalc += letter;
+					calc.table.value = strToCalc;
+					prevSign = false;
+					prevMin = false;
+					console.log(calc.table.value);
+					return;
+				}
+
+				/* Entered symbol is Math sign */
+				if (calc.validateMath(letter)) {
+					if (!prevSign) {
+						strToCalc += letter;
+						calc.table.value = strToCalc;
+						prevSign = true;
+						prevDot = false;
+						newCalc = false;
+					} else if (strToCalc.length == 0) {
+						strToCalc = '0' + letter;
+						prevSign = true;
+						newCalc = false;
+					} else if ((letter == '-') && (!prevMin)) {
+						strToCalc += letter;
+						calc.table.value = strToCalc;
+						prevMin = true;
+						newCalc = false;
+					}
+					console.log(calc.table.value);
+					return;
+				}
+
+				/* Entered symbol is Dot sign */
+				if (letter == '.') {
+					if (!prevDot) {
+						if (newCalc) {
+							calc.resetCalc();
+							newCalc = false;
+						}
+						strToCalc += letter;
+						calc.table.value = strToCalc;
+						prevDot = true;
+					}
+					console.log(calc.table.value);
+					return;
+				}
+
+				/* Entered symbol is Backspace */
+				if (letter == 'Backspace' && strToCalc.length > 0) {
+					symToDel = strToCalc.charAt(strToCalc.length - 1);
+					if (symToDel == '.') {
+						prevDot = false;
+					} else	if (calc.validateMath(symToDel) && (!prevMin)) {
+						prevSign = false;
+					} else if (prevMin) {
+						prevMin = false;
+					}
+					strToCalc = strToCalc.slice(0, strToCalc.length - 1);
+					calc.table.value = strToCalc;
+					console.log(calc.table.value);
+					return;
+				}
+
+				/* Entered symbol is = or Enter */
+				if (letter == '=' || letter == 'Enter') {
+					if (!prevSign) {
+						calc.table.value = eval(strToCalc.replace('--','+'));
+						prevSign = false;
+						prevDot = false;
+						newCalc = true;
+						strToCalc = calc.table.value.toString();
+						return;
+					}
+				}
+				calc.table.value = strToCalc;
+				console.log(calc.table.value);
+			};
+
+			/* Calculation initialisation*/
+			calc.init = function () {
+				calc.table = _doc.querySelector('#calcTable');
+
+				calc.table.addEventListener('keyup', function(e) {
+					console.log(e.key);
+					calc.checkKey(e.key);
+				});
+				_doc.querySelectorAll('.calc-board__key').forEach(function(el) {el.addEventListener('click', function(e) {
+						calc.checkKey(e.target.dataset.key);
+					})
+				})
+			};
+
+			if (_doc.readyState != 'loading'){
+				calc.init();
+			} else {
+				_doc.addEventListener('DOMContentLoaded', calc.init);
+			}
+		})(document, window)
+	</script>
+
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		.calc-body {
+			width: 100%;
+			max-width: 767px;
+			margin: 0 auto;
+			padding: 15px;
+			border: 1px solid #000;
+			border-radius: 6px;
+			background: #dce9ec;
+		}
+
+		#calcTable {
+			width: 100%;
+			height: 70px;
+			padding: 10px;
+			border: 1px solid #000;
+			font-size: 30px;
+		}
+
+
+		.calc-board__key {
+			display: block;
+			height: 50px;
+			margin-top: 15px;
+			border: 1px solid #000;
+			border-radius: 6px;
+			color: #fff;
+			font-size: 20px;
+			line-height: 50px;
+			text-align: center;
+			text-decoration: none;
+			background: #4c4944;
+			box-shadow: 1px 5px 9px #000;
+		}
+
+		.calc-board__key:active {
+			border: 1px solid #000;
+			box-shadow: -2px 2px 2px #000 inset;
+		}
+
+		.calc-board__key--large {
+			height: 115px;
+			line-height: 115px;
+		}
+
+		.calc-board__key--orange {
+			background: #ec9b05;
+		}
+
+		.calc-board__key--gray {
+			background: #8e8c8a;
+		}
+
+		.row {
+			margin: 0 -15px;
+		}
+
+		.row:after,
+		.row:before {
+			display: block;
+			width: 100%;
+			height: 0;
+			clear: both;
+			content: '';
+		}
+
+		[class*='col-'] {
+			float: left;
+			padding: 0 15px;
+		}
+
+		.col-3 {
+			width: 25%;
+		}
+
+		.col-4 {
+			width: 33.33%;
+		}
+
+		.col-8 {
+			width: 66.66%;
+		}
+
+		.col-9 {
+			width: 75%;
+		}
+	</style>
+
+	<body>
+		<div class="calc-body">
+			<input id="calcTable" onfocus="this.selectionStart = this.selectionEnd = this.value.length;" />
+			<div class="calc-board">
+				<div class="calc-board__row row">
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--orange" data-key="C">C</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--orange" data-key="Backspace"><-</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--gray" data-key="/">/</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--gray" data-key="*">*</a>
+					</div>
+				</div>
+				<div class="calc-board__row row">
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="7">7</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="8">8</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="9">9</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--gray" data-key="-">-</a>
+					</div>
+				</div>
+				<div class="calc-board__row row">
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="4">4</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="5">5</a>
+					</div>
+					<div class=" col-3">
+						<a href="javascript:void(0)" class="calc-board__key" data-key="6">6</a>
+					</div>
+					<div class="col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--gray" data-key="+">+</a>
+					</div>
+				</div>
+				<div class="calc-board__row row">
+					<div class="col-9">
+						<div class="row">
+							<div class="col-4">
+								<a href="javascript:void(0)" class="calc-board__key" data-key="1">1</a>
+							</div>
+							<div class="col-4">
+								<a href="javascript:void(0)" class="calc-board__key" data-key="2">2</a>
+							</div>
+							<div class="col-4">
+								<a href="javascript:void(0)" class="calc-board__key" data-key="3">3</a>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-8">
+								<a href="javascript:void(0)" class="calc-board__key" data-key="0">0</a>
+							</div>
+							<div class="col-4">
+								<a href="javascript:void(0)" class="calc-board__key" data-key=".">.</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-3">
+						<a href="javascript:void(0)" class="calc-board__key calc-board__key--large calc-board__key--gray" data-key="=">=</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
